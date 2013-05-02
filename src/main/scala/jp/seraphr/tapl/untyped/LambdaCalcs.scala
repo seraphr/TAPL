@@ -10,7 +10,7 @@ object LambdaCalcs {
 
   implicit def toApp(t1: Term) = new AppUtil(t1)
 
-//  def shiftForce(d: Int)(t: Term): Term = mapVar(t)((c, n) => TmVar(n + d))
+  //  def shiftForce(d: Int)(t: Term): Term = mapVar(t)((c, n) => TmVar(n + d))
 
   val abs: String => Term => TmAbs = s => t => TmAbs(s, t)
   //  val app: Term => Term => TmApp = t2 => t1 => TmApp(t1, t2)
@@ -31,7 +31,7 @@ object LambdaCalcs {
   def lambda4(f: (TmVar, TmVar, TmVar, TmVar) => Term): TmAbs = {
     val tTerm = f(TmVar(3), TmVar(2), TmVar(1), TmVar(0))
 
-    tTerm|> abs("d") |> abs("c") |> abs("b") |> abs("a")
+    tTerm |> abs("d") |> abs("c") |> abs("b") |> abs("a")
   }
 
   val tru = lambda2((a, b) => a)
@@ -47,9 +47,9 @@ object LambdaCalcs {
 
   val _0 = lambda2((s, z) => z)
   val _1 = lambda2((s, z) => s ~ z)
-  val _2 = lambda2((s, z) => s ~(s ~ z))
-  val _3 = lambda2((s, z) => s ~ (s ~(s ~ z)))
-  val _4 = lambda2((s, z) => s ~ (s ~ (s ~(s ~ z))))
+  val _2 = lambda2((s, z) => s ~ (s ~ z))
+  val _3 = lambda2((s, z) => s ~ (s ~ (s ~ z)))
+  val _4 = lambda2((s, z) => s ~ (s ~ (s ~ (s ~ z))))
 
   val succ = lambda3((n, s, z) => s ~ (n ~ s ~ z))
   val plus = lambda4((m, n, s, z) => m ~ s ~ (n ~ s ~ z))

@@ -29,7 +29,7 @@ class EvaluatorTest extends FunSuite {
     assert(isNumericVal(TmIsZero(TmTrue)) === false)
   }
 
-  test("isVal"){
+  test("isVal") {
     assert(isVal(TmZero) === true)
     assert(isVal(TmTrue) === true)
     assert(isVal(TmFalse) === true)
@@ -50,7 +50,7 @@ class EvaluatorTest extends FunSuite {
     assert(isVal(TmIsZero(TmTrue)) === false)
   }
 
-  test("eval"){
+  test("eval") {
     assert(evalAsString(z) === Some("0"))
     assert(evalAsString(s(z)) === Some("1"))
     assert(evalAsString(s(s(z))) === Some("2"))
@@ -58,7 +58,6 @@ class EvaluatorTest extends FunSuite {
     assert(evalAsString(p(p(z))) === Some("0"))
     assert(evalAsString(s(p(p(z)))) === Some("1"))
     assert(evalAsString(p(p(s(s(s(z)))))) === Some("1"))
-
 
     assert(evalAsString(t) === Some("true"))
     assert(evalAsString(f) === Some("false"))
@@ -77,7 +76,6 @@ class EvaluatorTest extends FunSuite {
     val tFalse = if_(is(s(z)), t, f)
     assert(evalAsString(if_(tTrue, s(s(z)), s(z))) === Some("2"))
     assert(evalAsString(if_(tFalse, s(s(z)), s(z))) === Some("1"))
-
 
     assert(evalAsString(is(t)) === None)
     assert(evalAsString(s(t)) === None)

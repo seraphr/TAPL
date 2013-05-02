@@ -78,8 +78,8 @@ object Evaluator extends UntypedContext {
   }
 
   def eval1(aContext: Context, t: Term): Option[Term] = {
-//    println(printTerm(t))
-//    println(printTermDeBruijn(t))
+    //    println(printTerm(t))
+    //    println(printTermDeBruijn(t))
 
     t match {
       case TmApp(TmAbs(tHint, t12), v2) if isVal(aContext, v2) =>

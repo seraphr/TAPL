@@ -19,7 +19,7 @@ class EvaluatorTest extends FunSuite {
 
   case class LambdaEquals(aLeft: Term, aRight: Term)
 
-  class AssertUtil(aLeft: Term){
+  class AssertUtil(aLeft: Term) {
     def ====(aRight: Term) = LambdaEquals(aLeft, aRight)
   }
 
