@@ -86,20 +86,29 @@ object Evaluator extends UntypedContext {
         Some(substitutionTop(v2, t12))
       case TmApp(v1, t2) if isVal(aContext, v1) =>
         eval1(aContext, t2).map(TmApp(v1, _))
-      case TmApp(t1, t2) =>
+      case TmApp(t1, t2) => {
         eval1(aContext, t1).map(TmApp(_, t2))
+      }
       case _ => None
     }
   }
 
-  @tailrec
-  def eval(aContext: Context, aTerm: Term): Term = eval1(aContext, aTerm) match {
-    case Some(t) => eval(aContext, t)
-    case _ => aTerm
+  def eval(aContext: Context, aTerm: Term): Term = {
+    @tailrec
+    def innerEval(aContext: Context, aInnerTerm: Term/*, aPastTerms: List[Term] = Nil*/): Term = {
+      eval1(aContext, aInnerTerm) match {
+        case Some(t) =>
+          /*println(printTerm(t, LambdaCalcs.valueMap));*/ innerEval(aContext, t/*, aPastTerms*/)
+        case _ => aInnerTerm
+      }
+    }
+
+    innerEval(aContext, aTerm)
   }
 
-  def printTerm(aTerm: Term): String = {
+  def printTerm(aTerm: Term, aValueMap: Map[TmAbs, String] = Map()): String = {
     def printTermInner(aTermInner: Term, aContext: Context, aOuter: Boolean): String = aTermInner match {
+      case t @ TmAbs(_, _) if aValueMap.contains(t) => aValueMap(t)
       case TmAbs(tHint, tTerm) => {
         val (tCnt, tName) = pickFreshName(aContext, tHint)
         val tTemplate = if (aOuter) "(lambda %s.%s)" else "lambda %s.%s"
