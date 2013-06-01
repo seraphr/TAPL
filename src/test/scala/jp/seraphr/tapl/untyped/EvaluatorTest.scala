@@ -12,7 +12,7 @@ class EvaluatorTest extends FunSuite {
   val e = (t: Term) => eval(Nil, t)
   case class LambdaEquals(aLeft: Term, aRight: Term)
 
-  class AssertUtil(aLeft: Term) {
+  implicit class AssertUtil(aLeft: Term) {
     def ====(aRight: Term) = LambdaEquals(aLeft, aRight)
   }
 
@@ -20,8 +20,6 @@ class EvaluatorTest extends FunSuite {
     val LambdaEquals(l, r) = aEq
     assert(e(equal ~ l ~ r) === tru)
   }
-
-  implicit def toAssert(aLeft: Term) = new AssertUtil(aLeft)
 
     test("test fugafuga") {
       val tOne = eval(Nil, equal ~ (plus ~ _1 ~ _3) ~ (times ~ _2 ~ _2))

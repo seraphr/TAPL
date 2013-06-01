@@ -3,6 +3,8 @@ package jp.seraphr.tapl.untyped
 import scala.util.DynamicVariable
 import scala.annotation.tailrec
 
+import language.implicitConversions
+
 object LambdaBuilder {
   import FuncUtils._
 
