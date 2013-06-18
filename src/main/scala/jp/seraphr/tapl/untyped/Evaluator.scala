@@ -1,6 +1,7 @@
 package jp.seraphr.tapl.untyped
 
 import scala.annotation.tailrec
+import jp.seraphr.tapl.utils.FuncUtils
 
 object Evaluator extends UntypedContext {
   def mapVar(t: Term)(f: (Int, Int) => Term): Term = {
