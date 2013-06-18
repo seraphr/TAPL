@@ -75,6 +75,8 @@ object Evaluator extends SimpleTypedContext {
   }
 
   def isVal(aContext: Context, t: Term) = t match {
+    case TmTrue => true
+    case TmFalse => true
     case TmAbs(_, _, _) => true
     case _ => false
   }
@@ -90,6 +92,11 @@ object Evaluator extends SimpleTypedContext {
         eval1(aContext, t2).map(TmApp(v1, _))
       case TmApp(t1, t2) => {
         eval1(aContext, t1).map(TmApp(_, t2))
+      }
+      case TmIf(TmTrue, t2, t3) => Some(t2)
+      case TmIf(TmFalse, t2, t3) => Some(t3)
+      case TmIf(t1, t2, t3) => {
+        eval1(aContext, t1).map(TmIf(_, t2, t3))
       }
       case _ => None
     }
