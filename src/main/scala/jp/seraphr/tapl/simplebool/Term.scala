@@ -1,6 +1,6 @@
 package jp.seraphr.tapl.simplebool
 
-trait Term
+sealed trait Term
 
 case class TmVar(n: Int) extends Term
 case class TmAbs(nameHint: String, typ: Type, t: Term) extends Term

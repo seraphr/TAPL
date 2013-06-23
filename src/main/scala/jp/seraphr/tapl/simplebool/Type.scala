@@ -1,6 +1,6 @@
 package jp.seraphr.tapl.simplebool
 
-trait Type
+sealed trait Type
 case object TyBool extends Type
 case class TyArrow(cod: Type, dom: Type) extends Type
 

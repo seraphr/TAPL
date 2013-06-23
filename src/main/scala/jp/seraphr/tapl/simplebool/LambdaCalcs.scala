@@ -8,18 +8,6 @@ import jp.seraphr.tapl.utils.FuncUtils
 object LambdaBuilder {
   import FuncUtils._
 
-//  // TODO このままだと、カッコによる優先順位付けができない
-//  implicit class ArrowBuilder(aLeft: Type) {
-//    def -->(aRight: Type): Type = {
-//      def appendToRight(aLeft: Type, aRight: Type): Type = aLeft match{
-//        case TyArrow(l, r) => TyArrow(l, appendToRight(r, aRight))
-//        case _ => TyArrow(aLeft, aRight)
-//      }
-//
-//      appendToRight(aLeft, aRight)
-//    }
-//  }
-
   private val mVariables = new DynamicVariable[List[VarBox]](Nil)
   case class VarBox(var v: TmVar) {
     def shift = mapSelf(_ + 1)
@@ -116,25 +104,28 @@ object LambdaCalcs {
   implicit def toApp(t1: Term) = new AppUtil(t1)
   implicit def toApp(t1: VarBox) = new AppUtil(t1.v)
 
-  private val valueMapBuilder = Map.newBuilder[TmAbs, String]
+  private val valueMapBuilder = Map.newBuilder[Term, String]
 
   val tru = TmTrue
   val fls = TmFalse
-  val ltru = lambda2(TyBool, TyBool)((a, b) => a)
-  val lfls = lambda2(TyBool, TyBool)((a, b) => b)
+  val ltru = lambda2(t[NatType], t[NatType])((a, b) => a)
+  val lfls = lambda2(t[NatType], t[NatType])((a, b) => b)
 
   val _if: (Term, Term, Term) => TmIf = TmIf(_, _, _)
-  val test = _if
+  val ltest = lambda3(t[NatType => NatType => NatType], t[NatType], t[NatType])((a, b, c) => a ~ b ~ c)
   val and = lambda2(TyBool, TyBool)((l, r) => _if(l, r, TmFalse))
   val or = lambda2(TyBool, TyBool)((l, r) => _if(l, TmTrue, r))
   val not = lambda1(TyBool)(b => _if(b, TmTrue, TmFalse))
 
+  /**
+   * first secondを与えられたあとの、数値ペアの型
+   */
+  type PairTypeFunc = (NatType => NatType => NatType) => NatType
+  val pair = lambda3(t[NatType], t[NatType], t[NatType => NatType => NatType])((f, s, b) => b ~ f ~ s)
+  val first = lambda1(t[PairTypeFunc])(_ ~ ltru)
+  val second = lambda1(t[PairTypeFunc])(_ ~ lfls)
 
-
-  val pair = lambda3(TyBool, TyBool, t[Bool => Bool => Bool])((f, s, b) => b ~ f ~ s)
-  val first = lambda1(t[(Bool => Bool => Bool) => Bool])(_ ~ ltru)
-  val second = lambda1(t[(Bool => Bool => Bool) => Bool])(_ ~ lfls)
-
+  type NatType = (Bool => Bool) => Bool => Bool
   private val lambdaSZ = lambda2(("s", t[Bool => Bool]), ("z", TyBool)) _
   val _0 = lambdaSZ((s, z) => z)
   val _1 = lambdaSZ((s, z) => s ~ z)
@@ -178,44 +169,32 @@ object LambdaCalcs {
     }
   }
 
-  private val mTypeOfNum = t[(Bool => Bool) => Bool => Bool]
-  val succ = lambda3(mTypeOfNum, t[Bool => Bool], TyBool)((n, s, z) => s ~ (n ~ s ~ z))
-  val plus = lambda4(mTypeOfNum, mTypeOfNum, t[Bool => Bool], TyBool)((m, n, s, z) => m ~ s ~ (n ~ s ~ z))
-  val times = lambda2(("m", mTypeOfNum), ("n", mTypeOfNum))((m, n) => m ~ (plus ~ n) ~ _0)
+  val succ = lambda3(t[NatType], t[Bool => Bool], TyBool)((n, s, z) => s ~ (n ~ s ~ z))
+  val plus = lambda4(t[NatType], t[NatType], t[Bool => Bool], TyBool)((m, n, s, z) => m ~ s ~ (n ~ s ~ z))
+  val times = lambda4(("m", t[NatType]), ("n", t[NatType]), ("s", t[Bool => Bool]), ("z", TyBool))((m, n, s, z) => m ~ (n ~ s) ~ z)
 
-  val isZero = lambda1(("n", mTypeOfNum))(_ ~ lambda1("_", TyBool)(_ => fls) ~ tru)
-//
-//  val pred = {
-//    val zz = pair ~ _0 ~ _0
-//    val ss = lambda1("p")(p => pair ~ (second ~ p) ~ (plus ~ _1 ~ (second ~ p)))
-//
-//    lambda1(m => first ~ (m ~ ss ~ zz))
-//  }
-//
-//  val subtract = lambda2((m, n) => n ~ pred ~ m)
-//  val equal = lambda2((m, n) => and ~ (isZero ~ (subtract ~ m ~ n)) ~ (isZero ~ (subtract ~ n ~ m)))
-//
-//  val fix = lambda1("f")(f => lambda1("x")(x => f ~ lambda1("y")(y => x ~ x ~ y)) ~ lambda1("x")(x => f ~ lambda1("y")(y => x ~ x ~ y)))
-//  val factorial = {
-//    val g = lambda2("fact", "n")((fact, n) => _if ~ (isZero ~ n) ~
-//      lambda1(_ => _1) ~
-//      lambda1(_ => times ~ n ~ (fact ~ (pred ~ n))) ~ _0)
-//    valueMapBuilder += ((g, "fact"))
-//    fix ~ g
-//  }
-//
-//  valueMapBuilder += ((tru, "true"))
-//  valueMapBuilder += ((fls, "false"))
-//  valueMapBuilder += ((_0, "0"))
-//  valueMapBuilder += ((_1, "1"))
-//  valueMapBuilder += ((_2, "2"))
-//  valueMapBuilder += ((_3, "3"))
-//  valueMapBuilder += ((_4, "4"))
-//  valueMapBuilder += ((isZero, "isZero"))
-//  valueMapBuilder += ((test, "if"))
-//  valueMapBuilder += ((times, "times"))
-//  valueMapBuilder += ((pred, "pred"))
-//  valueMapBuilder += ((succ, "succ"))
-//
-//  val valueMap = valueMapBuilder.result
+  val isZero = lambda1(("n", t[NatType]))(_ ~ lambda1("_", TyBool)(_ => fls) ~ tru)
+
+  val pred = {
+    val zz = pair ~ _0 ~ _0
+    val ss = lambda1("p", t[PairTypeFunc])(p => pair ~ (second ~ p) ~ (plus ~ _1 ~ (second ~ p)))
+
+    lambda1(t[NatType])(m => first ~ (m ~ ss ~ zz))
+  }
+
+  val subtract = lambda2(t[NatType], t[NatType])((m, n) => n ~ pred ~ m)
+  val equal = lambda2(t[NatType], t[NatType])((m, n) => and ~ (isZero ~ (subtract ~ m ~ n)) ~ (isZero ~ (subtract ~ n ~ m)))
+
+  valueMapBuilder += ((ltru, "true"))
+  valueMapBuilder += ((lfls, "false"))
+  valueMapBuilder += ((_0, "0"))
+  valueMapBuilder += ((_1, "1"))
+  valueMapBuilder += ((_2, "2"))
+  valueMapBuilder += ((_3, "3"))
+  valueMapBuilder += ((_4, "4"))
+  valueMapBuilder += ((isZero, "isZero"))
+  valueMapBuilder += ((times, "times"))
+  valueMapBuilder += ((succ, "succ"))
+
+  val valueMap = valueMapBuilder.result
 }

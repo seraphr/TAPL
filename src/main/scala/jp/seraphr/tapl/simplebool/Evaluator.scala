@@ -9,9 +9,12 @@ import scala.util.Success
 object Evaluator extends SimpleTypedContext {
   def mapVar(t: Term)(f: (Int, Int) => Term): Term = {
     def walk(c: Int, t: Term): Term = t match {
-      case TmVar(n) => f(c, n)
+      case TmVar(n)              => f(c, n)
       case TmAbs(tHint, typ, t1) => TmAbs(tHint, typ, walk(c + 1, t1))
-      case TmApp(t1, t2) => TmApp(walk(c, t1), walk(c, t2))
+      case TmApp(t1, t2)         => TmApp(walk(c, t1), walk(c, t2))
+      case TmTrue                => t
+      case TmFalse               => t
+      case TmIf(t1, t2, t3)      => TmIf(walk(c, t1), walk(c, t2), walk(c, t3))
     }
 
     walk(0, t)
@@ -75,10 +78,10 @@ object Evaluator extends SimpleTypedContext {
   }
 
   def isVal(aContext: Context, t: Term) = t match {
-    case TmTrue => true
-    case TmFalse => true
+    case TmTrue         => true
+    case TmFalse        => true
     case TmAbs(_, _, _) => true
-    case _ => false
+    case _              => false
   }
 
   def eval1(aContext: Context, t: Term): Option[Term] = {
@@ -93,7 +96,7 @@ object Evaluator extends SimpleTypedContext {
       case TmApp(t1, t2) => {
         eval1(aContext, t1).map(TmApp(_, t2))
       }
-      case TmIf(TmTrue, t2, t3) => Some(t2)
+      case TmIf(TmTrue, t2, t3)  => Some(t2)
       case TmIf(TmFalse, t2, t3) => Some(t3)
       case TmIf(t1, t2, t3) => {
         eval1(aContext, t1).map(TmIf(_, t2, t3))
@@ -125,8 +128,8 @@ object Evaluator extends SimpleTypedContext {
         tTemplate.format(tName, printTermInner(tTerm, tCnt, false))
       }
       case TmApp(t1, t2 @ TmApp(_, _)) => "%s (%s)".format(printTermInner(t1, aContext, true), printTermInner(t2, aContext, true))
-      case TmApp(t1, t2) => "%s %s".format(printTermInner(t1, aContext, true), printTermInner(t2, aContext, true))
-      case TmVar(n) => indexToName(aContext, n)
+      case TmApp(t1, t2)               => "%s %s".format(printTermInner(t1, aContext, true), printTermInner(t2, aContext, true))
+      case TmVar(n)                    => indexToName(aContext, n)
     }
 
     printTermInner(aTerm, Nil, false)
@@ -139,8 +142,8 @@ object Evaluator extends SimpleTypedContext {
         tTemplate.format(printTermDeBruijnInner(tTerm, false))
       }
       case TmApp(t1, t2 @ TmApp(_, _)) => "%s (%s)".format(printTermDeBruijnInner(t1, true), printTermDeBruijnInner(t2, true))
-      case TmApp(t1, t2) => "%s %s".format(printTermDeBruijnInner(t1, true), printTermDeBruijnInner(t2, true))
-      case TmVar(n) => n.toString
+      case TmApp(t1, t2)               => "%s %s".format(printTermDeBruijnInner(t1, true), printTermDeBruijnInner(t2, true))
+      case TmVar(n)                    => n.toString
     }
 
     printTermDeBruijnInner(aTerm, false)
@@ -154,9 +157,9 @@ object Evaluator extends SimpleTypedContext {
   }
 
   def isNameBound(aContext: Context, aName: String): Boolean = aContext match {
-    case Nil => false
+    case Nil                                => false
     case (tName, _) :: xs if tName == aName => true
-    case (tName, _) :: xs => isNameBound(xs, aName)
+    case (tName, _) :: xs                   => isNameBound(xs, aName)
   }
 
   def indexToName(aContext: Context, aIndex: Int): String = {
@@ -166,7 +169,7 @@ object Evaluator extends SimpleTypedContext {
 
   def getTypeFromContext(aContext: Context, i: Int): Type = getBinding(aContext, i) match {
     case VarBind(typ) => typ
-    case _ => throw new RuntimeException(s"与えられた変数(${i} : ${indexToName(aContext, i)})のBindingはVarBindではありません。")
+    case _            => throw new RuntimeException(s"与えられた変数(${i} : ${indexToName(aContext, i)})のBindingはVarBindではありません。")
   }
 
   def getBinding(aContext: Context, i: Int): Binding = aContext(i)._2
@@ -188,12 +191,12 @@ object Evaluator extends SimpleTypedContext {
       val tType2 = typeOf(aContext, t2)
 
       (tType1, tType2) {
-        case (TyArrow(cod, dom), _) if cod == tType1 => dom
-        case (TyArrow(cod, dom), _) => throw new RuntimeException(s"parameter type mismatch. ${tType2} is applied to ${tType1}")
-        case _ => throw new ApplyTypeMismatchException(s"find ${tType1} but arrow type expected")
+        case (TyArrow(cod, dom), arg) if cod == arg => dom
+        case (func @ TyArrow(cod, dom), arg)        => throw new RuntimeException(s"parameter type mismatch. ${arg} is applied to ${func}")
+        case (func, _)                                      => throw new ApplyTypeMismatchException(s"find ${func} but arrow type expected")
       }
     }
-    case TmTrue => Success(TyBool)
+    case TmTrue  => Success(TyBool)
     case TmFalse => Success(TyBool)
     case TmIf(cond, tru, fls) => {
       for {
