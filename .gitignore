@@ -14,3 +14,6 @@ project/plugins/project/
 .scala_dependencies
 .classpath
 .project
+
+# idea specific
+.idea
