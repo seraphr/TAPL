@@ -1,5 +1,6 @@
 *.class
 *.log
+ocaml_impls
 
 # sbt specific
 dist/*
